@@ -5,7 +5,7 @@ public class LayersSwitcher : MonoBehaviour {
 
     public Transform farLayerContainer;
 
-    public float threshold = 100000.0f;
+    public float threshold = 100000f;
     protected float sqrThreshold;
     protected float sqrReverseThreshold;
 
@@ -14,10 +14,16 @@ public class LayersSwitcher : MonoBehaviour {
     public int mainLayerID = 0;
     public int farLayerID = 8;
 
-    public GameObject farCamera;
-    protected int farCameraInstanceID;
+    [Tooltip("Dont't forget to add far camera here.")]
+    public List<GameObject> farObjectsToIgnore;
+    protected List<int> farObjIDsToIgnore;
 
-    private Dictionary<int, Vector3> objScales = new Dictionary<int, Vector3>();
+    public struct ObjectProps {
+        public Vector3 scale;
+        public bool physical;
+    }
+
+    private Dictionary<int, ObjectProps> objectPropsDict = new Dictionary<int, ObjectProps>();
 
     protected void SetLayerRecursively(GameObject obj, int newLayer) {
         obj.layer = newLayer;
@@ -30,7 +36,10 @@ public class LayersSwitcher : MonoBehaviour {
     private void Start() {
         sqrThreshold = threshold * threshold;
         sqrReverseThreshold = (threshold * layerScale) * (threshold * layerScale);
-        farCameraInstanceID = farCamera.GetInstanceID();
+        farObjIDsToIgnore = new List<int>();
+        foreach (GameObject o in farObjectsToIgnore) {
+            farObjIDsToIgnore.Add(o.GetInstanceID());
+        }
     }
 
     private void LateUpdate() {
@@ -38,17 +47,32 @@ public class LayersSwitcher : MonoBehaviour {
         foreach (Transform child in transform) {
             if (child.position.sqrMagnitude > sqrThreshold) {
                 int objID = child.gameObject.GetInstanceID();
+                ObjectProps childProps = new ObjectProps() {
+                    scale = child.localScale,
+                    physical = false,
+                };
 
-                child.parent = farLayerContainer;
-
-                if (objScales.ContainsKey(objID)) {
-                    objScales[objID] = child.localScale;
-                } else {
-                    objScales.Add(objID, child.localScale);
+                Debug.LogFormat("moving object with scale {0}:{1}:{2} to far layer.", child.localScale.x, child.localScale.y, child.localScale.z);
+                // Normal rigidbodies go nuts after rescaling
+                Rigidbody rb = child.gameObject.GetComponent<Rigidbody>();
+                if (rb != null) {
+                    Debug.Log("Has rigidbody: " + rb);
+                    childProps.physical = !rb.isKinematic;
+                    rb.Sleep();
+                    rb.velocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                    rb.isKinematic = true;
                 }
-                child.localScale = child.localScale * layerScale;
 
+                if (objectPropsDict.ContainsKey(objID)) {
+                    objectPropsDict[objID] = childProps;
+                } else {
+                    objectPropsDict.Add(objID, childProps);
+                }
+
+                child.localScale = child.localScale * layerScale;
                 child.position = child.position * layerScale;
+                child.parent = farLayerContainer;
 
                 SetLayerRecursively(child.gameObject, farLayerID);
             }
@@ -57,16 +81,25 @@ public class LayersSwitcher : MonoBehaviour {
         // Moving close objects to mainLayer
         foreach (Transform child in farLayerContainer) {
             int objID = child.gameObject.GetInstanceID();
-            if (objID != farCameraInstanceID && child.position.sqrMagnitude < sqrReverseThreshold) {
-                child.parent = transform;
 
-                if (objScales.ContainsKey(objID)) {
-                    child.localScale = objScales[objID];
+            if (child.position.sqrMagnitude < sqrReverseThreshold && !farObjIDsToIgnore.Contains(objID)) {
+                child.parent = transform;
+                child.position = child.position / layerScale;
+
+                if (objectPropsDict.ContainsKey(objID)) {
+                    child.localScale = objectPropsDict[objID].scale;
+
+                    // Make rigidbody physical again if applicable
+                    Rigidbody rb = child.gameObject.GetComponent<Rigidbody>();
+                    if (rb != null) {
+                        rb.isKinematic = !objectPropsDict[objID].physical;
+                        rb.WakeUp();
+                    }
                 } else {
                     child.localScale = child.localScale / layerScale;
-                    Debug.LogErrorFormat("Original scale of object %d was not found while moving to main layer", objID);
+                    Debug.LogErrorFormat("Original scale of object {0} was not found while moving to main layer", objID);
                 }
-                child.position = child.position / layerScale;
+
                 SetLayerRecursively(child.gameObject, mainLayerID);
             }
         }

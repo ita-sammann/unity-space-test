@@ -16,7 +16,13 @@ public class PlayerController : MonoBehaviour {
     private void FixedUpdate() {
         float forward = Input.GetAxis("Vertical");
         float sideways = Input.GetAxis("Horizontal");
-        rb.AddRelativeForce(sideways * thrust, 0.0f, forward * thrust);
+        float vertical = 0f;
+        if (Input.GetKey(KeyCode.Space)) {
+            vertical = 1f;
+        } else if (Input.GetKey(KeyCode.LeftShift)) {
+            vertical = -1f;
+        }
+        rb.AddRelativeForce(sideways * thrust, vertical * thrust, forward * thrust);
 
         if (rb.velocity.sqrMagnitude > sqrMaxSpeed) {
             rb.velocity = rb.velocity.normalized * maxSpeed;

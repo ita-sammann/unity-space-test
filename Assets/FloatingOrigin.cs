@@ -27,7 +27,7 @@ public class FloatingOrigin : MonoBehaviour {
 
     private void LateUpdate() {
         Vector3 cameraPosition = gameObject.transform.position;
-        cameraPosition.y = 0.0f;
+        cameraPosition.y = 0f;
 
         if (cameraPosition.sqrMagnitude > sqrThreshold) {
             foreach (Layer l in layers) {

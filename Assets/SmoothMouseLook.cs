@@ -6,36 +6,36 @@ public class SmoothMouseLook : MonoBehaviour {
 
     public enum RotationAxes { MouseXAndY = 0, MouseX = 1, MouseY = 2 }
     public RotationAxes axes = RotationAxes.MouseXAndY;
-    public float sensitivityX = 15.0f;
-    public float sensitivityY = 15.0f;
+    public float sensitivityX = 15f;
+    public float sensitivityY = 15f;
 
-    public float minimumX = -360.0f;
-    public float maximumX = 360.0f;
+    public float minimumX = -360f;
+    public float maximumX = 360f;
 
-    public float minimumY = -60.0f;
-    public float maximumY = 60.0f;
+    public float minimumY = -60f;
+    public float maximumY = 60f;
 
-    float rotationX = 0.0f;
-    float rotationY = 0.0f;
+    float rotationX = 0f;
+    float rotationY = 0f;
 
     private List<float> rotArrayX = new List<float>();
-    float rotAverageX = 0.0f;
+    float rotAverageX = 0f;
 
     private List<float> rotArrayY = new List<float>();
-    float rotAverageY = 0.0f;
+    float rotAverageY = 0f;
 
-    public float frameCounter = 20.0f;
+    public float frameCounter = 20f;
 
     Quaternion originalRotation;
 
     protected static float ClampAngle(float angle, float min, float max) {
         angle = angle % 360;
-        if ((angle >= -360.0f) && (angle <= 360.0f)) {
-            if (angle < -360.0f) {
-                angle += 360.0f;
+        if ((angle >= -360f) && (angle <= 360f)) {
+            if (angle < -360f) {
+                angle += 360f;
             }
-            if (angle > 360.0f) {
-                angle -= 360.0f;
+            if (angle > 360f) {
+                angle -= 360f;
             }
         }
         return Mathf.Clamp(angle, min, max);

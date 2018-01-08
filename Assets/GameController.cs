@@ -8,7 +8,7 @@ public class GameController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         int num = 0;
-        for (int i = 1000; i < 100000000; i += 20000) {
+        for (int i = 10000; i < 100000000; i += 20000) {
             Instantiate(bigCube, new Vector3(0, 0, i), Random.rotation, mainLayerContainer);
             num++;
         }

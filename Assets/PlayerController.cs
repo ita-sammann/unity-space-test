@@ -2,26 +2,24 @@
 
 public class PlayerController : MonoBehaviour {
 
-    //private Rigidbody rb;
+    private Rigidbody rb;
 
-    public float speed;
-    public float rotationSpeed;
+    public float thrust;
+    public float maxSpeed;
+    private float sqrMaxSpeed;
 
-    // Use this for initialization
     private void Start () {
-        //rb = GetComponent<Rigidbody>();
-	}
-	
-	private void Update () {
-        float translation = Input.GetAxis("Vertical") * speed;
-        float rotation = Input.GetAxis("Horizontal") * rotationSpeed;
-        translation *= Time.deltaTime;
-        rotation *= Time.deltaTime;
-        transform.Translate(0, 0, translation);
-        transform.Rotate(0, rotation, 0);
+        rb = GetComponent<Rigidbody>();
+        sqrMaxSpeed = maxSpeed * maxSpeed;
     }
-
+	
     private void FixedUpdate() {
-        
+        float forward = Input.GetAxis("Vertical");
+        float sideways = Input.GetAxis("Horizontal");
+        rb.AddRelativeForce(sideways * thrust, 0.0f, forward * thrust);
+
+        if (rb.velocity.sqrMagnitude > sqrMaxSpeed) {
+            rb.velocity = rb.velocity.normalized * maxSpeed;
+        }
     }
 }
